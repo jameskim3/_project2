@@ -51,7 +51,7 @@ class Engine:
                 data[key] = value.to(device)
             if accumulation_steps == 1 and b_idx == 0:
                 optimizer.zero_grad()
-            outputs = model(**data)
+            outputs = model(data["image"])
             loss= criterion(outputs,data["targets"])
 
             if not use_tpu:
@@ -89,7 +89,7 @@ class Engine:
             for b_idx, data in enumerate(tk0):
                 for key, value in data.items():
                     data[key] = value.to(device)
-                predictions = model(**data)
+                predictions = model(data["image"])
                 loss= criterion(predictions, data["targets"])
                 predictions = predictions.cpu()
                 losses.update(loss.item(), data_loader.batch_size)
@@ -106,7 +106,8 @@ class Engine:
             for b_idx, data in enumerate(tk0):
                 for key, value in data.items():
                     data[key] = value.to(device)
-                predictions, _ = model(**data)
+                # predictions, _ = model(**data)
+                predictions = model(data["image"])
                 predictions = predictions.cpu()
                 final_predictions.append(predictions)
         return final_predictions

@@ -44,6 +44,8 @@ GridDistortion, HueSaturationValue, IAAAdditiveGaussianNoise, GaussNoise,
 MotionBlur, MedianBlur, RandomBrightnessContrast, IAAPiecewiseAffine, IAASharpen, 
 IAAEmboss, Flip, OneOf, Compose, Rotate, Cutout, HorizontalFlip, Normalize ) 
 def get_aug(mode="train"):
+    mean = (0.0, 0.0, 0.0)
+    std = (1., 1., 1.)
     if mode =="train":
         aug=Compose([Rotate(15),
             OneOf([IAAAdditiveGaussianNoise(),GaussNoise(),], p=0.2),
@@ -57,17 +59,17 @@ def get_aug(mode="train"):
                 RandomBrightnessContrast(),
             ], p=0.3),
             HueSaturationValue(p=0.3),
-            Normalize(),
+            Normalize(mean=mean,std=std,max_pixel_value=255.0),
             ])
     else:
-        aug=Compose([Normalize(),])
+        aug=Compose([Normalize(mean=mean,std=std,max_pixel_value=255.0),])
 
     return aug
 
 #Dataset
 train_bs=32
 valid_bs=32
-from MyLoader import ClassificationLoader
+from MyLoader import ClassificationLoader2
 def get_dataset(df, mode="train",path=None):
     imgs=df.tar_path.values.tolist()
     if mode =="test":
@@ -76,7 +78,7 @@ def get_dataset(df, mode="train",path=None):
         tar=df.category.values
 
     aug=get_aug(mode)
-    dataset=ClassificationLoader(
+    dataset=ClassificationLoader2(
         image_paths=imgs,targets=tar,resize=None,augmentations=aug
     )
     batch_size = train_bs if mode=="train" else valid_bs
@@ -92,18 +94,18 @@ from MyEngine_criterion import Engine
 def train(fold):
     df=pd.read_csv(data_path+"/train_fold.csv")
     device="cuda" if torch.cuda.is_available() else "cpu"
-    epochs=5
+    epochs=10
 
     df_train=df[df.fold!=fold].reset_index(drop=True)
     df_valid=df[df.fold==fold].reset_index(drop=True)
 
     path=img_path
-    train_loader,train_tar=get_dataset(df_train[0:100],"train",path=path)
-    valid_loader,valid_tar=get_dataset(df_valid[0:100],"valid",path=path)
+    train_loader,train_tar=get_dataset(df_train,"train",path=path)
+    valid_loader,valid_tar=get_dataset(df_valid,"valid",path=path)
 
     model=get_model()
     model=model.to(device)
-    model_save_path=save_path+f"/200802_Resnext50_fold_{fold}.bin"
+    model_save_path=save_path+f"/200808_Resnext50_fold_{fold}.bin"
 
     optimizer=torch.optim.Adam(model.parameters(),lr=1e-4)
     scheduler=torch.optim.lr_scheduler.ReduceLROnPlateau(
@@ -127,41 +129,42 @@ def train(fold):
             break
 
 def predict(fold):
-    df=pd.read_csv(data_path+"/test_path.csv")
+    df=pd.read_csv(data_path+"/test_path2.csv")
     device="cuda" if torch.cuda.is_available() else "cpu"
 
     path=img_path+"/test/"
-    test_loader,_ = get_dataset(df[0:1],"test",path=path)
+    test_loader,_ = get_dataset(df[0:4],"test",path=path)
 
     model=get_model()
-    model_save_path=save_path+f"/200801_fold_{fold}.bin"
+    model_save_path=save_path+f"/200808_Resnext50_fold_{fold}.bin"
     model.load_state_dict(torch.load(model_save_path))
     model=model.to(device)
 
     preds=Engine.predict(test_loader,model, device)
-    preds=np.vstack(preds).argmax(axis=1)
+    preds=np.vstack(preds)#.argmax(axis=1)
 
     #script to c++
-    # sample=torch.rand(1,3,224,224)
-    # model.to("cpu")
-    # traced_script_module = torch.jit.trace(model,sample)
-    # traced_script_module.save(save_path+f"/traced_efficientnet_model_fold_{fold}.pt")
+    sample=torch.rand(1,3,224,224)
+    model.to("cpu")
+    traced_script_module = torch.jit.trace(model,sample)
+    traced_script_module.save(save_path+f"/traced_200808_resnext50_fold_{fold}.pt")
     
     return preds
 
 if __name__ =="__main__":
     #set_global()
-    train(0)
+    # train(0)
     # train(1)
     # train(2)
     # train(3)
     # train(4)
 
-    # p1 = predict(0)
+    p1 = predict(0)
     # p2 = predict(1)
     # p3 = predict(2)
     # p4 = predict(3)
     # p5 = predict(4)
+    print("result",p1)
 
     # p1=p1.reshape(-1,1)
     # p2=p2.reshape(-1,1)
