@@ -113,6 +113,7 @@
       <GenerateDebugInformation>true</GenerateDebugInformation>
       <AdditionalLibraryDirectories>E:\LibTorch\opencv\build\x64\vc15\lib;E:\LibTorch\libtorch_debug\lib;%(AdditionalLibraryDirectories)</AdditionalLibraryDirectories>
       <AdditionalDependencies>E:\LibTorch\libtorch_debug\lib\torch.lib;E:\LibTorch\libtorch_debug\lib\c10.lib;E:\LibTorch\libtorch_debug\lib\torch_cpu.lib;E:\LibTorch\libtorch_debug\lib\torch_cuda.lib;opencv_world440d.lib;%(AdditionalDependencies)</AdditionalDependencies>
+      <AdditionalOptions>-INCLUDE:?warp_size@cuda@at@@YAHXZ</AdditionalOptions>
     </Link>
   </ItemDefinitionGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">

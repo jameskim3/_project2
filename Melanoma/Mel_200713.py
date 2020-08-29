@@ -38,7 +38,7 @@ class SEResnext50_32x4d(nn.Module):
 import albumentations
 # from wtfml.data_loaders.image import ClassificationLoader
 # from wtfml.utils import EarlyStopping
-# from wtfml.engine import Engine
+from wtfml.engine import Engine
 from MyLoader import ClassificationLoader
 from MyEngine import Engine
 from MyUtils import EarlyStopping
